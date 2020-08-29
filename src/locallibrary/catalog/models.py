@@ -91,6 +91,10 @@ class Author(models.Model):
 
     def get_absolute_url(self):
         """Returns the url to access a particular author instance."""
+        # We look at urls.py for this
+        # The HTML files ask for author.get_absolute_url()
+        # This returns the integer ID of this author using the url pattern with
+        # the name `author-detail`
         return reverse('author-detail', args=[str(self.id)])
 
     def __str__(self):

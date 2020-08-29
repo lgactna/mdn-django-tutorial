@@ -31,3 +31,26 @@ def index(request):
 
     # Render the HTML template index.html with the data in the context variable
     return render(request, 'index.html', context=context)
+
+from django.views import generic
+
+class BookListView(generic.ListView):
+    model = Book
+    #if, perhaps, you wanted to list five books with war
+    #context_object_name = 'my_book_list'   # your own name for the list as a template variable
+    #queryset = Book.objects.filter(title__icontains='war')[:5] # Get 5 books containing the title war
+    #template_name = 'books/my_arbitrary_template_name_list.html'  # Specify your own template name/location
+    
+    #this caps the max books shown at once on the All Books page to a number
+    #additional pages are done with GET query strings, e.g., /catalog/books/?page=2
+    paginate_by = 1
+
+class BookDetailView(generic.DetailView):
+    model = Book
+
+class AuthorListView(generic.ListView):
+    model = Author
+    #we could paginate here but i dont have enough authors
+
+class AuthorDetailView(generic.DetailView):
+    model = Author
