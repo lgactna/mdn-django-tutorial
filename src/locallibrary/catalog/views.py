@@ -58,3 +58,57 @@ class AuthorListView(generic.ListView):
 
 class AuthorDetailView(generic.DetailView):
     model = Author
+
+
+
+from django.contrib.auth.mixins import LoginRequiredMixin
+
+class LoanedBooksByUserListView(LoginRequiredMixin,generic.ListView):
+    """Generic class-based view listing books on loan to current user."""
+    model = BookInstance
+    template_name ='catalog/bookinstance_list_borrowed_user.html'
+    paginate_by = 10
+
+    #This has exactly the same redirect behaviour as the login_required decorator.
+    #You can also specify an alternative location to redirect the user to if they are not authenticated (login_url),
+    # and a URL parameter name instead of "next" to insert the current absolute path (redirect_field_name).
+    #there is no need to do that here since ridirecting to /login is already desired
+    '''
+    login_url = '/login/'
+    redirect_field_name = 'redirect_to'
+    '''
+    
+    #apart from pagination restricting the returned count to 10
+    #here we filter the results returned by borrower, then by those with a status of on loan
+    #then we sort by the due back date
+    def get_queryset(self):
+        return BookInstance.objects.filter(borrower=self.request.user).filter(status__exact='o').order_by('due_back')
+
+#this mixin allows us to restrict views to those with specific permissions
+#(note that admins/superusers are treated as having ALL permissions)
+#decorators can be used as well, though this can be at the cost of some flexibility
+#for example, changing a view based on individual permissions; then additional views would need to be
+#declared
+from django.contrib.auth.mixins import PermissionRequiredMixin
+
+#orignally this inherited LoginRequiredMixin as well...
+#but that broke the page and always routed to a 403
+class BorrowedBooksListView(PermissionRequiredMixin,LoginRequiredMixin,generic.ListView):
+    #notice how there is no explicit redirect to login.html if lacking permissions
+    #see https://developer.mozilla.org/en-US/docs/Learn/Server-side/Django/Authentication#Login_template
+    #if the user is logged in but lacking permissions, it will throw 403 forbidden at them
+    #see https://docs.djangoproject.com/en/3.1/ref/views/ for what happens
+    permission_required = 'catalog.can_mark_returned'
+    #again, not needed
+    '''
+    login_url = '/login/'
+    redirect_field_name = 'redirect_to'
+    '''
+   
+    model = BookInstance
+    template_name ='catalog/borrowed_books_list.html'
+    paginate_by = 10
+
+    def get_queryset(self):
+        return BookInstance.objects.filter(status__exact='o').order_by('due_back')
+

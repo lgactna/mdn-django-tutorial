@@ -1,4 +1,8 @@
+from datetime import date
+
 from django.db import models
+#we make the auth user object available to the models below
+from django.contrib.auth.models import User
 
 # Create your models here.
 
@@ -17,7 +21,9 @@ class Book(models.Model):
     title = models.CharField(max_length=200)
 
     # Foreign Key used because book can only have one author, but authors can have multiple books
-    # Author as a string rather than object because it hasn't been declared yet in the file
+    # Author here is declared as a string rather than object because it hasn't been declared yet in the file
+    # (note how it still works )
+    # this relationship is used elsewhere, as are manytomany and onetoone; foreignkey is equivalent to onetomany
     author = models.ForeignKey('Author', on_delete=models.SET_NULL, null=True)
 
     #as per challenge.
@@ -57,6 +63,18 @@ class BookInstance(models.Model):
     imprint = models.CharField(max_length=200)
     due_back = models.DateField(null=True, blank=True)
 
+    borrower = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+
+    #see https://www.programiz.com/python-programming/property
+    #and https://www.programiz.com/python-programming/decorator
+    #this is equivalent to is_overdue = property(is_overdue)
+    #property() allows us to easily handle attributes of an object
+    @property
+    def is_overdue(self):
+        if self.due_back and date.today() > self.due_back:
+            return True
+        return False
+
     LOAN_STATUS = (
         ('m', 'Maintenance'),
         ('o', 'On loan'),
@@ -74,6 +92,7 @@ class BookInstance(models.Model):
 
     class Meta:
         ordering = ['due_back']
+        permissions = (("can_mark_returned", "Set book as returned"),)
 
     def __str__(self):
         """String for representing the Model object."""
